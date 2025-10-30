@@ -24,16 +24,25 @@ resource "terraform_data" "mongodb" {
     host        = aws_instance.mongodb.private_ip
   }
    # terraform copies this file to mongodb server
-   provisioner "file" {
+  provisioner "file" {
     source      = "bootstrap.sh"
     destination = "/tmp/bootstrap.sh" # Path to the destination on the EC2 instance
 
    }
+
+#   provisioner "remote-exec" {
+#     inline = [
+#          "chmod +x /tmp/bootstrap.sh",
+#          "sudo sh /tmp/bootstrap.sh"
+      
+#     ]
+
+#   }
   provisioner "remote-exec" {
     inline = [
-         "chmod +x /tmp/bootstrap.sh",
-         "sudo sh chmod +x /tmp/bootstrap.sh"
-      
+        "chmod +x /tmp/bootstrap.sh",
+        # "sudo sh /tmp/bootstrap.sh"
+        "sudo sh /tmp/bootstrap.sh mongodb"
     ]
   }
 }
