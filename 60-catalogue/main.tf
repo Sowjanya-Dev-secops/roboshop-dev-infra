@@ -16,7 +16,7 @@ resource "aws_instance" "catalogue" {
 # connect to instance using remote-excec provisioner through terraform_data
 resource "terraform_data" "catalogue" {
   triggers_replace = [
-    aws_instance.catalouge.id,
+    aws_instance.catalogue.id,
   ]
   connection {
     type        = "ssh"
