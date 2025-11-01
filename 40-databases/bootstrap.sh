@@ -34,7 +34,7 @@ dnf install ansible -y
 # cd ansible-playbook
 # ansible-playbook -i inventory main.yaml
 
-REPO_URL=https://github.com/daws-86s/ansible-roboshop-roles-tf.git
+REPO_URL=https://github.com/Sowjanya-Dev-secops/ansible-roboshop-roles-tf.git
 REPO_DIR=/opt/roboshop/ansible
 ANSIBLE_DIR=ansible-roboshop-roles-tf
 
