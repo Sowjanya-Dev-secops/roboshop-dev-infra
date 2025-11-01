@@ -40,6 +40,17 @@ resource "terraform_data" "catalogue" {
   }
 }
 
+resource "aws_ec2_instance_state" "catalogue" {
+      instance_id = aws_instance.catalogue.id
+      state       = "stopped"
+}
+
+resource "aws_ami_from_instance" "catalogue" {
+  name               = "${local.common_name_suffix}-catalouge-ami"
+  source_instance_id = aws_instance.catalogue.id
+  depends_on = [ aws_ec2_instance_state.catalogue ]
+}
+
 resource "aws_route53_record" "catalogue" {
   zone_id = var.zone_id
   name    = "mongodb-${ var.environment }.${ var.domain_name}"
@@ -48,3 +59,4 @@ resource "aws_route53_record" "catalogue" {
   records = [aws_instance.catalogue.private_ip]
   allow_overwrite = true
 }
+
