@@ -16,7 +16,7 @@ resource "aws_instance" "catalogue" {
 # connect to instance using remote-excec provisioner through terraform_data
 resource "terraform_data" "catalogue" {
   triggers_replace = [
-    aws_instance.catalogue.id,
+    aws_instance.catalogue.id
   ]
   connection {
     type        = "ssh"
@@ -43,12 +43,19 @@ resource "terraform_data" "catalogue" {
 resource "aws_ec2_instance_state" "catalogue" {
       instance_id = aws_instance.catalogue.id
       state       = "stopped"
+      depends_on = [terraform_data.catalogue]
 }
 
 resource "aws_ami_from_instance" "catalogue" {
   name               = "${local.common_name_suffix}-catalouge-ami"
   source_instance_id = aws_instance.catalogue.id
   depends_on = [ aws_ec2_instance_state.catalogue ]
+  tags = merge (
+        local.common_tags,
+        {
+            Name = "${local.common_name_suffix}-catalogue-ami" # roboshop-dev-mongodb
+        }
+  )
 }
 
 resource "aws_lb_target_group" "catalogue" {
@@ -56,7 +63,8 @@ resource "aws_lb_target_group" "catalogue" {
   port     = 8080
   protocol = "HTTP"
   vpc_id   = local.vpc_id
-  deregistration_delay = 60 # waiting period before deleting the instance
+  # waiting period before deleting the instance
+  deregistration_delay = 60 
   health_check {
     healthy_threshold = 2
     interval = 10
@@ -115,7 +123,7 @@ resource "aws_launch_template" "catalogue" {
 
 resource "aws_autoscaling_group" "catalogue" {
   name                      = "${local.common_name_suffix}-catalogue"
-  max_size                  = 100
+  max_size                  = 10
   min_size                  = 1
   health_check_grace_period = 100
   health_check_type         = "ELB"
@@ -132,12 +140,14 @@ resource "aws_autoscaling_group" "catalogue" {
   instance_refresh {
     strategy = "Rolling"
     preferences {
-      min_healthy_percentage = 50 # atleast 50% of the resouses should be up and running
+      # atleast 50% of the resouses should be up and running
+      min_healthy_percentage = 50 
     }
     triggers = ["launch_template"]
   }
 
   dynamic "tag" {
+    # we will get the iterator with name as tag
     for_each = merge(
       local.common_tags,
       {
@@ -165,20 +175,9 @@ resource "aws_autoscaling_policy" "catalogue" {
       predefined_metric_type = "ASGAverageCPUUtilization"
     }
 
-    target_value = 40.0
+    target_value = 75.0
   }
 }
-
-
-
-# resource "aws_route53_record" "catalogue" {
-#   zone_id = var.zone_id
-#   name    = "catalogue-${ var.environment }.${ var.domain_name}"
-#   type    = "A"
-#   ttl     = 1
-#   records = [aws_instance.catalogue.private_ip]
-#   allow_overwrite = true
-# }
 
 resource "aws_lb_listener_rule" "catalouge" {
   listener_arn = local.backend_alb_listener_arn
@@ -196,13 +195,13 @@ resource "aws_lb_listener_rule" "catalouge" {
   }
 }
 
-# resource "terraform_data" "catalogue_local" {
-#   triggers_replace = [
-#     aws_instance.catalogue.id
-#   ]
+resource "terraform_data" "catalogue_local" {
+  triggers_replace = [
+    aws_instance.catalogue.id
+  ]
   
-#   depends_on = [aws_autoscaling_policy.catalogue]
-#   provisioner "local-exec" {
-#     command = "aws ec2 terminate-instances --instance-ids ${aws_instance.catalogue.id}"
-#   }
-# }
+  depends_on = [aws_autoscaling_policy.catalogue]
+  provisioner "local-exec" {
+    command = "aws ec2 terminate-instances --instance-ids ${aws_instance.catalogue.id}"
+  }
+}
