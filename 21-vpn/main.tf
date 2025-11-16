@@ -7,13 +7,13 @@ resource "aws_instance" "open_vpn" {
   tags = merge(
     local.common_tags,
     {
-        Name = "${var.project_name}-${var.environment}-bastion"
+        Name = "${var.project_name}-${var.environment}-vpn"
     }
   )
 }
 resource "aws_route53_record" "openvpn" {
   zone_id = var.zone_id
-  name    = "openvpn.${ var.domain_name}"
+  name    = "openvpn.${var.domain_name}"
   type    = "A"
   ttl     = 1
   records = [aws_instance.open_vpn.public_ip]
